@@ -1,6 +1,6 @@
-from flask import Flask, render_template_string, request, redirect, url_for
-from strategy import generate_signals
+from flask import Flask, render_template_string, request
 import os
+
 # -----------------------------
 # GLOBAL VARIABLES
 # -----------------------------
@@ -9,14 +9,64 @@ signals = [
     {"symbol": "TSLA", "signal": "SELL", "direction": "SHORT", "trend": "DOWN", "entry": 800, "stop": 820, "session": "INTRADAY"},
     {"symbol": "AMZN", "signal": "BUY", "direction": "LONG", "trend": "UP", "entry": 3200, "stop": 3150, "session": "INTRADAY"}
 ]
-auto_trading = True     # Auto Trading state (True = ON, False = OFF)
-overrides = {}          # manual overrides dictionary (LONG / SHORT / IGNORE)
+
+auto_trading = True     # Auto Trading ON/OFF
+overrides = {}          # manual override dictionary
 app = Flask(__name__)
 
 # In-memory overrides and auto-trading flag
 overrides = {}  # symbol -> "LONG"/"SHORT"/"IGNORE"
 auto_trading = True
-
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Dashboard</title>
+</head>
+<body>
+    <h1>Automated Trading Dashboard</h1>
+    <p>Auto Trading: {{ 'ON' if auto_trading else 'OFF' }}</p>
+    <table border="1">
+        <tr>
+            <th>Symbol</th>
+            <th>Signal</th>
+            <th>Direction</th>
+            <th>Trend</th>
+            <th>Entry</th>
+            <th>Stop</th>
+            <th>Session</th>
+            <th>Override</th>
+        </tr>
+        {% for s in signals %}
+        <tr style="
+            {% if s.symbol in overrides %}
+                {% if overrides[s.symbol] == 'LONG' %}background-color:#b6fcb6;
+                {% elif overrides[s.symbol] == 'SHORT' %}background-color:#fcb6b6;
+                {% elif overrides[s.symbol] == 'IGNORE' %}background-color:#f0f0f0;
+                {% endif %}
+            {% endif %}
+        ">
+            <td>{{ s.symbol }}</td>
+            <td>{{ s.signal }}</td>
+            <td>{{ s.direction }}</td>
+            <td>{{ s.trend }}</td>
+            <td>{{ s.entry }}</td>
+            <td>{{ s.stop }}</td>
+            <td>{{ s.session }}</td>
+            <td>
+                <form method="post" action="/override">
+                    <input type="hidden" name="symbol" value="{{ s.symbol }}">
+                    <button name="action" value="LONG">LONG</button>
+                    <button name="action" value="SHORT">SHORT</button>
+                    <button name="action" value="IGNORE">IGNORE</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+"""
 HTML = """
 <meta http-equiv="refresh" content="60">
 <h1>Automated Trading Dashboard (Real Signals)</h1>
@@ -61,7 +111,18 @@ HTML = """
 
 @app.route("/")
 def dashboard():
-    @app.route("/override", methods=["POST"])
+    return render_template_string(
+        HTML,
+        signals=signals,
+        auto_trading=auto_trading,
+        overrides=overrides
+    )
+@app.route("/override", methods=["POST"])
+def override():
+    symbol = request.form["symbol"]
+    action = request.form["action"]  # LONG / SHORT / IGNORE
+    overrides[symbol] = action
+    return dashboard()   @app.route("/override", methods=["POST"])
 def override():
     symbol = request.form["symbol"]
     action = request.form["action"]  # LONG / SHORT / IGNORE
@@ -104,5 +165,5 @@ def toggle_auto():
 import os
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Render provides $PORT
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
