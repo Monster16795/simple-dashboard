@@ -26,7 +26,12 @@ HTML = """
 
 @app.route("/")
 def dashboard():
-    signals = generate_signals()
+    try:
+        signals = generate_signals()
+    except Exception as e:
+        print(f"Error generating signals: {e}")
+        # Fallback table if signals fail
+        signals = [{"symbol":"ERROR","signal":"-","direction":"-","trend":"-","entry":"-","stop":"-","session":"-"}]
     return render_template_string(HTML, signals=signals)
 
 if __name__ == "__main__":
