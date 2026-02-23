@@ -1,34 +1,34 @@
-   from flask import Flask, render_template_string
-from strategy import generate_signals
+import alpaca_trade_api as tradeapi
+import pandas as pd
 import os
 
-app = Flask(__name__)
+# Read API keys from environment
+ALPACA_KEY = os.environ.get("ALPACA_API_KEY")
+ALPACA_SECRET = os.environ.get("ALPACA_SECRET_KEY")
+BASE_URL = "https://paper-api.alpaca.markets"
 
-HTML = """
-<meta http-equiv="refresh" content="60">
-<h1>Automated Trading Dashboard (Real Signals)</h1>
+api = tradeapi.REST(ALPACA_KEY, ALPACA_SECRET, BASE_URL, api_version='v2')
 
-<table border="1" cellpadding="5">
-<tr><th>Symbol</th><th>Signal</th><th>Direction</th><th>Trend</th><th>Entry</th><th>Stop</th><th>Session</th></tr>
-{% for s in signals %}
-<tr>
-<td>{{ s.symbol }}</td>
-<td>{{ s.signal }}</td>
-<td>{{ s.direction }}</td>
-<td>{{ s.trend }}</td>
-<td>{{ s.entry }}</td>
-<td>{{ s.stop }}</td>
-<td>{{ s.session }}</td>
-</tr>
-{% endfor %}
-</table>
-"""
+# 10-stock watchlist
+WATCHLIST = ["AAPL","MSFT","NVDA","AMZN","TSLA","META","GOOGL","JPM","DIS","NFLX"]
 
-@app.route("/")
-def dashboard():
-    signals = generate_signals()
-    return render_template_string(HTML, signals=signals)
+def get_intraday_data(symbol, timeframe="15Min", limit=50):
+    bars = api.get_bars(symbol, timeframe, limit=limit).df
+    return bars
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+def generate_signals():
+    signals = []
+    for symbol in WATCHLIST:
+        df = get_intraday_data(symbol)
+        last_row = df.iloc[-1]
+        direction = "LONG" if last_row['close'] > last_row['open'] else "SHORT"
+        signals.append({
+            "symbol": symbol,
+            "signal": "TRIGGER",
+            "direction": direction,
+            "trend": "Bull" if direction=="LONG" else "Bear",
+            "entry": round(last_row['close'], 2),
+            "stop": round(last_row['close']*0.99,2) if direction=="LONG" else round(last_row['close']*1.01,2),
+            "session": "RTH"
+        })
+    return signals
