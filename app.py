@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # In-memory overrides and auto-trading flag
-overrides = {}  # key: symbol, value: "LONG" / "SHORT" / "IGNORE"
+overrides = {}  # symbol -> "LONG"/"SHORT"/"IGNORE"
 auto_trading = True
 
 HTML = """
@@ -17,8 +17,10 @@ HTML = """
 </form>
 
 <table border="1" cellpadding="5">
-<tr><th>Symbol</th><th>Signal</th><th>Direction</th><th>Trend</th>
-<th>Entry</th><th>Stop</th><th>Session</th><th>Override</th></tr>
+<tr>
+<th>Symbol</th><th>Signal</th><th>Direction</th><th>Trend</th>
+<th>Entry</th><th>Stop</th><th>Session</th><th>Override</th>
+</tr>
 {% for s in signals %}
 <tr>
 <td>{{ s.symbol }}</td>
