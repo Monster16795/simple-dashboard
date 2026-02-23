@@ -40,14 +40,14 @@ HTML = """
             <th>Stop</th>
             <th>Session</th>
             <th>Override</th>
+            <th>Current Override</th>
         </tr>
         {% for s in signals %}
         <tr style="
-            {% if s.symbol in overrides %}
-                {% if overrides[s.symbol] == 'LONG' %}background-color:#b6fcb6;
-                {% elif overrides[s.symbol] == 'SHORT' %}background-color:#fcb6b6;
-                {% elif overrides[s.symbol] == 'IGNORE' %}background-color:#f0f0f0;
-                {% endif %}
+            {% set current = overrides.get(s.symbol.strip(), '') %}
+            {% if current == 'LONG' %}background-color:#b6fcb6;
+            {% elif current == 'SHORT' %}background-color:#fcb6b6;
+            {% elif current == 'IGNORE' %}background-color:#f0f0f0;
             {% endif %}
         ">
             <td>{{ s.symbol }}</td>
@@ -65,6 +65,7 @@ HTML = """
                     <button name="action" value="IGNORE">IGNORE</button>
                 </form>
             </td>
+            <td>{{ overrides.get(s.symbol.strip(), 'None') }}</td>
         </tr>
         {% endfor %}
     </table>
@@ -89,9 +90,10 @@ def dashboard():
 # -----------------------------
 @app.route("/override", methods=["POST"])
 def override():
-    symbol = request.form["symbol"]
+    symbol = request.form["symbol"].strip()
     action = request.form["action"]  # LONG / SHORT / IGNORE
     overrides[symbol] = action
+    print("Overrides:", overrides)  # Debug: confirm override updates
     return dashboard()
 
 # -----------------------------
