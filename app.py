@@ -4,7 +4,11 @@ import os
 # -----------------------------
 # GLOBAL VARIABLES
 # -----------------------------
-signals = []            # your stock signals list (can start empty or with dummy data)
+signals = [
+    {"symbol": "AAPL", "signal": "BUY", "direction": "LONG", "trend": "UP", "entry": 150, "stop": 145, "session": "INTRADAY"},
+    {"symbol": "TSLA", "signal": "SELL", "direction": "SHORT", "trend": "DOWN", "entry": 800, "stop": 820, "session": "INTRADAY"},
+    {"symbol": "AMZN", "signal": "BUY", "direction": "LONG", "trend": "UP", "entry": 3200, "stop": 3150, "session": "INTRADAY"}
+]
 auto_trading = True     # Auto Trading state (True = ON, False = OFF)
 overrides = {}          # manual overrides dictionary (LONG / SHORT / IGNORE)
 app = Flask(__name__)
@@ -57,12 +61,12 @@ HTML = """
 
 @app.route("/")
 def dashboard():
-    return render_template_string(
-        HTML,
-        signals=signals,
-        auto_trading=auto_trading,
-        overrides=overrides   # <--- pass the overrides dictionary to template
-    )
+    @app.route("/override", methods=["POST"])
+def override():
+    symbol = request.form["symbol"]
+    action = request.form["action"]  # LONG / SHORT / IGNORE
+    overrides[symbol] = action  # Update the overrides dictionary
+    return dashboard()  # Re-render the dashboard after overriding
     try:
         signals = generate_signals()
     except Exception as e:
