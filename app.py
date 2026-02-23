@@ -20,7 +20,14 @@ HTML = """
 <tr>
 <th>Symbol</th><th>Signal</th><th>Direction</th><th>Trend</th>
 <th>Entry</th><th>Stop</th><th>Session</th><th>Override</th>
-</tr>
+<tr style="
+{% if s.symbol in overrides %}
+    {% if overrides[s.symbol] == 'LONG' %}background-color:#b6fcb6;
+    {% elif overrides[s.symbol] == 'SHORT' %}background-color:#fcb6b6;
+    {% elif overrides[s.symbol] == 'IGNORE' %}background-color:#f0f0f0;
+    {% endif %}
+{% endif %}
+">
 {% for s in signals %}
 <tr>
 <td>{{ s.symbol }}</td>
