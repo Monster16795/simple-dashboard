@@ -1,7 +1,12 @@
 from flask import Flask, render_template_string, request, redirect, url_for
 from strategy import generate_signals
 import os
-
+# -----------------------------
+# GLOBAL VARIABLES
+# -----------------------------
+signals = []            # your stock signals list (can start empty or with dummy data)
+auto_trading = True     # Auto Trading state (True = ON, False = OFF)
+overrides = {}          # manual overrides dictionary (LONG / SHORT / IGNORE)
 app = Flask(__name__)
 
 # In-memory overrides and auto-trading flag
@@ -52,6 +57,12 @@ HTML = """
 
 @app.route("/")
 def dashboard():
+    return render_template_string(
+        HTML,
+        signals=signals,
+        auto_trading=auto_trading,
+        overrides=overrides   # <--- pass the overrides dictionary to template
+    )
     try:
         signals = generate_signals()
     except Exception as e:
